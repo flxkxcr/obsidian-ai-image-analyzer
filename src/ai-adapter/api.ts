@@ -3,6 +3,7 @@ import { checkProviderReady } from "./util";
 import { debugLog } from "../util";
 import { Notice } from "obsidian";
 import { OllamaProvider } from "./providers/ollamaProvider";
+import { LlamaCppProvider } from "./providers/llamaCppProvider";
 
 const context = "ai-adapter/api";
 
@@ -51,5 +52,13 @@ export async function queryWithImage(
 		}
 		debugLog(context, e);
 		return Promise.reject(e);
+	}
+}
+
+export function abortCurrentRequest(): void {
+	if (provider instanceof OllamaProvider) {
+		OllamaProvider.abortCurrentOllamaRequest();
+	} else if (provider instanceof LlamaCppProvider) {
+		LlamaCppProvider.abortCurrentRequest();
 	}
 }
