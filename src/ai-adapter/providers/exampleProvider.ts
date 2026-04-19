@@ -1,4 +1,4 @@
-import { Setting } from "obsidian";
+import { Setting, TFile } from "obsidian";
 import { Provider } from "../provider";
 import { Models } from "../types";
 import { possibleModels } from "../globals";
@@ -30,7 +30,7 @@ export class ExampleProvider extends Provider {
 		return Promise.resolve("");
 	}
 
-	queryWithImageHandling(prompt: string, image: string): Promise<string> {
+	queryWithImageHandling(prompt: string, image: TFile): Promise<string> {
 		return Promise.resolve("");
 	}
 

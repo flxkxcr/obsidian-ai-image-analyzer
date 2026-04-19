@@ -1,6 +1,6 @@
 import { Provider } from "../provider";
-import { Notice, Setting } from "obsidian";
-import { debugLog } from "../../util";
+import { Notice, Setting, TFile } from "obsidian";
+import {debugLog, fileToBase64String, getImageType, ImageType, svgFileToBase64String} from "../../util";
 import { ChatResponse, Ollama } from "ollama";
 import { Models } from "../types";
 import { notifyModelsChange, possibleModels } from "../globals";
@@ -136,11 +136,22 @@ export class OllamaProvider extends Provider {
 
 	async queryWithImageHandling(
 		prompt: string,
-		image: string,
+		image: TFile,
 	): Promise<string> {
+		let base64Data : string = "";
+		const imgType = getImageType(image);
+		if (imgType == ImageType.Unknown) {
+			throw new Error("Unknown image type.");
+		}
+		if (imgType == ImageType.Svg) {
+			base64Data = await svgFileToBase64String(image);
+		} else {
+			base64Data = await fileToBase64String(image);
+		}
+
 		const response: ChatResponse = await ollama.chat({
 			model: settings.aiAdapterSettings.selectedImageModel.model, //llava:13b or llava or llava-llama3
-			messages: [{ role: "user", content: prompt, images: [image] }],
+			messages: [{ role: "user", content: prompt, images: [base64Data] }],
 		});
 		return response.message.content;
 	}

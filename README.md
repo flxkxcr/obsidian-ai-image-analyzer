@@ -15,6 +15,7 @@ Currently it supports:
 - `jpeg`
 - `png`
 - `webp`
+- `svg`
 
 ### How to use
 
@@ -49,6 +50,14 @@ Those files can be synced between devices.
 ### Ollama Proxys
 
 Just use the Ollama URL in the settings. For example using [Open Web UI](https://docs.openwebui.com/) you can use the URL `http://[URL:PORT]/ollama` to access Ollama. You probably need to set a token (See Auth)
+
+### Llama.cpp (llama-server)
+
+1. Download the llama.cpp binary (https://github.com/ggml-org/llama.cpp)
+2. Download GGUF model and mmproj model in HuggingFace (https://huggingface.co/) or other website.
+3. Launch the llama-server `llama-server -m <your_model_file.gguf path> -mmproj <your_mmproj_model.gguf path>`
+4. Open obsidian
+5. TODO: The settings panel allows you to configure parameters such as `temperature`
 
 #### Auth
 

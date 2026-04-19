@@ -1,7 +1,7 @@
 import { provider } from "./globals";
 import { checkProviderReady } from "./util";
 import { debugLog } from "../util";
-import { Notice } from "obsidian";
+import { Notice, TFile } from "obsidian";
 import { OllamaProvider } from "./providers/ollamaProvider";
 import { LlamaCppProvider } from "./providers/llamaCppProvider";
 
@@ -34,7 +34,7 @@ export async function query(prompt: string): Promise<string> {
 
 export async function queryWithImage(
 	prompt: string,
-	image: string,
+	image: TFile,
 ): Promise<string> {
 	checkProviderReady();
 

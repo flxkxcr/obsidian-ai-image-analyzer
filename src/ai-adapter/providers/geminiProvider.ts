@@ -1,11 +1,11 @@
 import AIImageAnalyzerPlugin from "../../main";
-import { Notice, Setting } from "obsidian";
+import { Notice, Setting, TFile } from "obsidian";
 import { Provider } from "../provider";
 import { Models } from "../types";
 import { notifyModelsChange, possibleModels } from "../globals";
 import { saveSettings, settings } from "../../settings";
 import { GoogleGenAI } from "@google/genai";
-import { debugLog } from "../../util";
+import {debugLog, fileToBase64String, getImageType, ImageType, svgFileToBase64String} from "../../util";
 
 const context = "ai-adapter/providers/geminiProvider";
 
@@ -86,8 +86,19 @@ export class GeminiProvider extends Provider {
 
 	async queryWithImageHandling(
 		prompt: string,
-		image: string,
+		image: TFile,
 	): Promise<string> {
+		let base64Data: string = "";
+		const imgType = getImageType(image);
+		if (imgType == ImageType.Unknown) {
+			throw new Error("Unknown image type.");
+		}
+		if (imgType == ImageType.Svg) {
+			base64Data = await svgFileToBase64String(image);
+		} else {
+			base64Data = await fileToBase64String(image);
+		}
+
 		const response = await gemini.models.generateContent({
 			model: settings.aiAdapterSettings.selectedImageModel.model,
 			contents: [
@@ -95,7 +106,7 @@ export class GeminiProvider extends Provider {
 					role: "user",
 					parts: [
 						{ text: prompt },
-						{ inlineData: { mimeType: "image/png", data: image } },
+						{ inlineData: { mimeType: "image/png", data: base64Data } },
 					],
 				},
 			],

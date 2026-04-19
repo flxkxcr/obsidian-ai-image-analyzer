@@ -1,10 +1,17 @@
-import { Provider } from "../provider";
-import { Notice, Setting } from "obsidian";
-import { debugLog } from "../../util";
-import { Models } from "../types";
-import { notifyModelsChange, possibleModels } from "../globals";
+import {Provider} from "../provider";
+import {Notice, Setting, TFile} from "obsidian";
+import {
+	debugLog,
+	fileToBase64String,
+	getImageType,
+	ImageType,
+	svgFileToBase64String,
+	webpFileToBase64String
+} from "../../util";
+import {Models} from "../types";
+import {notifyModelsChange, possibleModels} from "../globals";
 import AIImageAnalyzerPlugin from "../../main";
-import { saveSettings, settings } from "../../settings";
+import {saveSettings, settings} from "../../settings";
 
 const context = "ai-adapter/providers/llamaCppProvider";
 
@@ -163,10 +170,24 @@ export class LlamaCppProvider extends Provider {
 
 	async queryWithImageHandling(
 		prompt: string,
-		image: string,
+		image: TFile,
 	): Promise<string> {
 		const url = `${settings.aiAdapterSettings.llamaCppSettings.url}/v1/chat/completions`;
 		const token = settings.aiAdapterSettings.llamaCppSettings.token;
+
+		let base64Data : string = "";
+		const imgType = getImageType(image);
+		if (imgType == ImageType.Unknown) {
+			throw new Error("Unknown image type.");
+		}
+		if (imgType == ImageType.Svg) {
+			base64Data = await svgFileToBase64String(image);
+		}
+		else if (imgType == ImageType.Webp) {
+			base64Data = await webpFileToBase64String(image);
+		} else {
+			base64Data = await fileToBase64String(image);
+		}
 
 		const headers: Record<string, string> = {
 			"Content-Type": "application/json",
@@ -193,7 +214,7 @@ export class LlamaCppProvider extends Provider {
 								{
 									type: "image_url",
 									image_url: {
-										url: `data:image/png;base64,${image}`,
+										url: `data:image/png;base64,${base64Data}`,
 									},
 								},
 							],
@@ -207,7 +228,7 @@ export class LlamaCppProvider extends Provider {
 			if (!response.ok) {
 				const errorText = await response.text();
 				throw new Error(
-					`HTTP error! status: ${response.status}, ${errorText}`,
+					`HTTP error! status: ${response.status}, ${errorText}`
 				);
 			}
 

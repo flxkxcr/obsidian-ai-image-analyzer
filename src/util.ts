@@ -49,52 +49,143 @@ export function isImageFile(file: TFile): boolean {
 	);
 }
 
-export async function readFile(file: TFile): Promise<string> {
-	if (file.path.endsWith(".svg")) {
-		debugLog(context, "Converting SVG to PNG");
+export enum ImageType {
+	Unknown,
+	Png,
+	Jpg,
+	Jpeg,
+	Webp,
+	Svg
+}
 
-		try {
-			const svgData: string = await this.app.vault.adapter.read(
-				file.path,
-			);
+export function getImageType(file: TFile): ImageType {
+	const ext = file.extension.toLowerCase();
 
-			return await new Promise<string>((resolve, reject) => {
-				const canvas = document.createElement("canvas");
-				canvas.width = 1000;
-				canvas.height = 1000;
-				const context = canvas.getContext("2d");
+	const map: Record<string, ImageType> = {
+		png: ImageType.Png,
+		jpg: ImageType.Jpg,
+		jpeg: ImageType.Jpeg,
+		webp: ImageType.Webp,
+		svg: ImageType.Svg
+	};
 
-				if (!context) {
-					reject(new Error("Could not get canvas context"));
-					return;
-				}
+	return map[ext] ?? ImageType.Unknown;
+}
 
-				const image = new Image();
-				image.onload = () => {
-					try {
-						context.drawImage(image, 0, 0, 1000, 1000);
-						const dataUrl = canvas.toDataURL("image/png");
-						resolve(dataUrl.split(",")[1]);
-					} catch (err) {
-						reject(err);
-					}
-				};
-				image.onerror = (error) => {
-					console.error("Error loading SVG image:", error);
-					reject(error);
-				};
+export async function fileToBase64String(file: TFile): Promise<string> {
+	// @ts-ignore
+	return arrayBufferToBase64(await app.vault.readBinary(file)); //must be global app ref to be used externally
+}
 
-				// Use a data URL; btoa is fine for typical SVG content — if you expect
-				// Unicode in SVG, consider using a proper base64 encoder.
-				image.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+export async function svgFileToBase64String(file: TFile): Promise<string> {
+	if (!file.path.toLowerCase().endsWith(".svg")) {
+		throw new Error("Please input svg file.");
+	}
+
+	debugLog(context, "Converting SVG to PNG");
+
+	try {
+		const svgData: string = await this.app.vault.adapter.read(file.path);
+
+		return await new Promise<string>((resolve, reject) => {
+			const canvas = document.createElement("canvas");
+			const size = 1000;
+			canvas.width = size;
+			canvas.height = size;
+
+			const ctx = canvas.getContext("2d");
+			if (!ctx) {
+				reject(new Error("Could not get canvas context"));
+				return;
+			}
+
+			const img = new Image();
+
+			const blob = new Blob([svgData], {
+				type: "image/svg+xml;charset=utf-8",
 			});
-		} catch (error) {
-			console.error("Error converting SVG to PNG:", error);
-			throw error;
-		}
-	} else {
-		// @ts-ignore
-		return arrayBufferToBase64(await app.vault.readBinary(file)); //must be global app ref to be used externally
+			const url = URL.createObjectURL(blob);
+
+			img.onload = () => {
+				try {
+					URL.revokeObjectURL(url);
+
+					ctx.fillStyle = "#ffffff";
+					ctx.fillRect(0, 0, size, size);
+
+					ctx.drawImage(img, 0, 0, size, size);
+
+					const dataUrl = canvas.toDataURL("image/png");
+					resolve(dataUrl.split(",")[1]); // 只返回 base64
+				} catch (err) {
+					reject(err);
+				}
+			};
+
+			img.onerror = (err) => {
+				URL.revokeObjectURL(url);
+				console.error("Error loading SVG image:", err);
+				reject(err);
+			};
+
+			img.src = url;
+		});
+	} catch (error) {
+		console.error("Error converting SVG to PNG:", error);
+		throw error;
+	}
+}
+
+export async function webpFileToBase64String(file: TFile): Promise<string> {
+	if (!file.path.toLowerCase().endsWith(".webp")) {
+		throw new Error("Please input webp file.");
+	}
+
+	debugLog(context, "Converting WEBP to PNG");
+
+	try {
+		const binary = await this.app.vault.readBinary(file);
+		const blob = new Blob([binary], { type: "image/webp" });
+
+		return await new Promise<string>((resolve, reject) => {
+			const canvas = document.createElement("canvas");
+			const context = canvas.getContext("2d");
+
+			if (!context) {
+				reject(new Error("Could not get canvas context"));
+				return;
+			}
+
+			const image = new Image();
+			const url = URL.createObjectURL(blob);
+
+			image.onload = () => {
+				try {
+					canvas.width = image.width;
+					canvas.height = image.height;
+
+					context.drawImage(image, 0, 0);
+					const dataUrl = canvas.toDataURL("image/png");
+
+					URL.revokeObjectURL(url);
+
+					resolve(dataUrl.split(",")[1]);
+				} catch (err) {
+					URL.revokeObjectURL(url);
+					reject(err);
+				}
+			};
+
+			image.onerror = (error) => {
+				URL.revokeObjectURL(url);
+				reject(error);
+			};
+
+			image.src = url;
+		});
+	} catch (error) {
+		console.error("Error converting WEBP to PNG:", error);
+		throw error;
 	}
 }
 

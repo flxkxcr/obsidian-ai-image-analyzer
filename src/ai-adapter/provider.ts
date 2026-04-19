@@ -1,4 +1,5 @@
 import { Models } from "./types";
+import { TFile } from "obsidian";
 import AIImageAnalyzerPlugin from "../main";
 
 export abstract class Provider {
@@ -8,7 +9,7 @@ export abstract class Provider {
 	abstract queryHandling(prompt: string): Promise<string>;
 	abstract queryWithImageHandling(
 		prompt: string,
-		image: string,
+		image: TFile,
 	): Promise<string>;
 	abstract generateSettings(
 		containerEl: HTMLElement,

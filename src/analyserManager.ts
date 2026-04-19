@@ -1,6 +1,6 @@
 import { Notice, TFile } from "obsidian";
 import { isInCache, readCache, writeCache } from "./cache";
-import { debugLog, isImageFile, readFile } from "./util";
+import { debugLog, isImageFile, fileToBase64String } from "./util";
 import { settings } from "./settings";
 import { imagesProcessQueue, runWithTimeout } from "./globals";
 import { queryWithImage, abortCurrentRequest } from "./ai-adapter/api";
@@ -74,9 +74,7 @@ async function analyzeImageHandling(file: TFile): Promise<string> {
 	}
 
 	try {
-		const data: string = await readFile(file);
-
-		const response = await queryWithImage(settings.prompt, data);
+		const response = await queryWithImage(settings.prompt, file);
 		debugLog(context, "Response: " + (response ?? "null"));
 
 		if (!response) {
