@@ -55,7 +55,7 @@ Just use the Ollama URL in the settings. For example using [Open Web UI](https:/
 
 1. Download the llama.cpp binary (https://github.com/ggml-org/llama.cpp)
 2. Download GGUF model and mmproj model in HuggingFace (https://huggingface.co/) or other website.
-3. Launch the llama-server `llama-server -m <your_model_file.gguf path> -mmproj <your_mmproj_model.gguf path>`
+3. Launch the llama-server `llama-server -m <your_model_file.gguf path> --mmproj <your_mmproj_model.gguf path>`
 4. Open obsidian
 5. TODO: The settings panel allows you to configure parameters such as `temperature`
 
